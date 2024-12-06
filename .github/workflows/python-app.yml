@@ -20,6 +20,19 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-    - name: Run tests
+    - name: Run architecture tests
       run: |
-        pytest tests/ -v --cov=. 
+        export CUDA_VISIBLE_DEVICES=""
+        pytest tests/test_model.py -v --cov=.
+    - name: Run quick training test
+      run: |
+        # Modify training parameters for quick CPU test
+        sed -i 's/num_epochs=20/num_epochs=1/g' eva3_session_6_assignment_.py
+        sed -i 's/batch_size=32/batch_size=16/g' eva3_session_6_assignment_.py
+        python eva3_session_6_assignment_.py
+    - name: Upload trained model
+      uses: actions/upload-artifact@v2
+      with:
+        name: trained-model
+        path: models/
+        retention-days: 5
