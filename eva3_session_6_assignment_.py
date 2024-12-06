@@ -403,8 +403,12 @@ def train_model(num_epochs=20):
         correct_train = 0
         total_train = 0
         
-        pbar = tqdm(train_loader, desc='Training', 
-                   bar_format='{l_bar}{bar:20}{r_bar}')
+        pbar = tqdm(
+            train_loader,
+            desc=f'Epoch {epoch+1}/{num_epochs}',
+            ncols=80,  # Fixed width
+            bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{rate_fmt}{postfix}]'
+        )
         
         for data, target in pbar:
             optimizer.zero_grad()
@@ -418,11 +422,12 @@ def train_model(num_epochs=20):
             total_train += target.size(0)
             correct_train += (predicted == target).sum().item()
             
-            # Update progress bar with live metrics
+            # Update progress bar with cleaner metrics
             train_acc = 100 * correct_train / total_train
-            pbar.set_description(
-                f'Loss: {loss.item():.3f} | Acc: {train_acc:.2f}%'
-            )
+            pbar.set_postfix({
+                'loss': f'{loss.item():.3f}',
+                'acc': f'{train_acc:.1f}%'
+            }, refresh=True)
         
         # Calculate accuracies
         train_acc = 100 * correct_train / total_train
