@@ -9,31 +9,19 @@ on:
 jobs:
   train:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.8]
-
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.8'
     
     - name: Cache pip packages
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    
-    - name: Cache datasets
-      uses: actions/cache@v3
-      with:
-        path: data
-        key: mnist-dataset
     
     - name: Install dependencies
       run: |
@@ -41,36 +29,35 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
     
-    - name: Run tests
+    - name: Run architecture tests
       run: |
         pytest tests/test_model.py -v
     
-    - name: Train model
+    - name: Run minimal training
       run: |
-        # Set environment for CPU training
-        export CUDA_VISIBLE_DEVICES=""
-        # Run training with full epochs
-        python eva3_session_6_assignment_.py
+        # Create minimal training script for CI
+        cat > train_ci.py << EOL
+        import torch
+        from eva3_session_6_assignment_ import SimpleCNN, train_model
+        
+        # Override training parameters for CI
+        torch.manual_seed(42)  # For reproducibility
+        model, history = train_model(num_epochs=1)  # Run only 1 epoch
+        EOL
+        
+        # Run minimal training
+        python train_ci.py
     
-    - name: Upload trained model
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: trained-models
+        name: training-artifacts
         path: |
           models/*.pth
           augmented_samples/
-        retention-days: 5
-    
-    - name: Upload training metrics
-      uses: actions/upload-artifact@v4
-      with:
-        name: training-metrics
-        path: |
-          *.log
-          *.png
-        retention-days: 5
+        retention-days: 1
 
     - name: Training Summary
       run: |
-        echo "Training completed!"
-        echo "Check artifacts for trained models and metrics"
+        echo "CI Training completed"
+        echo "Full training should be done on GPU environment"
