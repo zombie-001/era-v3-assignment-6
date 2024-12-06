@@ -302,7 +302,9 @@ def save_model(model, accuracy, epoch):
     return filename
 
 def train_model(num_epochs=20):
-    print("Starting training process...")
+    print("\n" + "="*50)
+    print(" Starting Training Process")
+    print("="*50)
     
     # Initialize model and print summary
     model = SimpleCNN()
@@ -385,14 +387,24 @@ def train_model(num_epochs=20):
     
     # Training loop
     best_test_acc = 0
+    history = {
+        'train_acc': [],
+        'val_acc': [],
+        'test_acc': []
+    }
+    
     for epoch in range(num_epochs):
+        print(f"\n📊 Epoch [{epoch+1}/{num_epochs}]")
+        print("-"*50)
+        
+        # Training phase
         model.train()
         running_loss = 0.0
         correct_train = 0
         total_train = 0
         
-        # Progress bar
-        pbar = tqdm(train_loader, desc=f'Epoch {epoch+1}/{num_epochs}')
+        pbar = tqdm(train_loader, desc='Training', 
+                   bar_format='{l_bar}{bar:20}{r_bar}')
         
         for data, target in pbar:
             optimizer.zero_grad()
@@ -406,28 +418,40 @@ def train_model(num_epochs=20):
             total_train += target.size(0)
             correct_train += (predicted == target).sum().item()
             
-            # Update progress bar
+            # Update progress bar with live metrics
             train_acc = 100 * correct_train / total_train
-            pbar.set_description(f'Epoch {epoch+1} (loss={loss.item():.4f}, acc={train_acc:.2f}%)')
+            pbar.set_description(
+                f'Loss: {loss.item():.3f} | Acc: {train_acc:.2f}%'
+            )
         
         # Calculate accuracies
         train_acc = 100 * correct_train / total_train
         val_acc = evaluate_model(model, val_loader)
         test_acc = evaluate_model(model, test_loader)
         
-        # Print epoch summary
-        print(f"\nEpoch {epoch+1} Summary:")
-        print(f"Training Accuracy: {train_acc:.2f}%")
-        print(f"Validation Accuracy: {val_acc:.2f}%")
-        print(f"Test Accuracy: {test_acc:.2f}%")
-        print("-" * 50)
+        # Store metrics
+        history['train_acc'].append(train_acc)
+        history['val_acc'].append(val_acc)
+        history['test_acc'].append(test_acc)
         
+        # Print epoch summary
+        print("\n📈 Epoch Summary:")
+        print(f"├─ Training    : {train_acc:.2f}%")
+        print(f"├─ Validation  : {val_acc:.2f}%")
+        print(f"└─ Test        : {test_acc:.2f}%")
+        
+        # Save best model
         if test_acc > best_test_acc:
             best_test_acc = test_acc
-            save_model(model, test_acc, epoch)
+            model_path = save_model(model, test_acc, epoch)
+            print(f"\n💾 New best model saved! ({model_path})")
     
-    print("\nTraining completed!")
-    return model
+    print("\n" + "="*50)
+    print("🎉 Training Completed!")
+    print(f"Best Test Accuracy: {best_test_acc:.2f}%")
+    print("="*50 + "\n")
+    
+    return model, history
 
 if __name__ == "__main__":
     train_model(num_epochs=20) 
