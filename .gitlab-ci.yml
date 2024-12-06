@@ -1,56 +1,50 @@
 image: python:3.8
 
 stages:
-  - test
+  - setup
   - train
-  - deploy
+  - test
+  - upload
 
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.pip-cache"
+setup:
+  stage: setup
+  script:
+    - python -V
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install -r requirements-dev.txt
+  cache:
+    paths:
+      - .pip-cache/
 
-cache:
-  paths:
-    - .pip-cache/
-    - data/
-    - models/
-
-before_script:
-  - python -V
-  - pip install -r requirements.txt
-  - pip install -r requirements-dev.txt
+train:
+  stage: train
+  script:
+    # Quick training for CI
+    - |
+      sed -i 's/num_epochs=20/num_epochs=1/g' eva3_session_6_assignment_.py
+      sed -i 's/batch_size=32/batch_size=16/g' eva3_session_6_assignment_.py
+    - python eva3_session_6_assignment_.py
+  cache:
+    paths:
+      - data/
+      - models/
 
 test:
   stage: test
   script:
     - export CUDA_VISIBLE_DEVICES=""
-    - pytest tests/test_model.py -v --cov=.
-  artifacts:
-    reports:
-      coverage: coverage.xml
+    - pytest tests/test_model.py -v
 
-train:
-  stage: train
+upload:
+  stage: upload
   script:
-    # Modify training parameters for CI environment
-    - |
-      sed -i 's/num_epochs=20/num_epochs=1/g' eva3_session_6_assignment_.py
-      sed -i 's/batch_size=32/batch_size=16/g' eva3_session_6_assignment_.py
-    # Run training
-    - python eva3_session_6_assignment_.py
+    - echo "Uploading trained model..."
+    - ls models/
   artifacts:
     paths:
-      - models/
+      - models/*.pth
       - augmented_samples/
     expire_in: 1 week
   only:
     - main
-
-deploy:
-  stage: deploy
-  script:
-    - echo "Deploying model..."
-    # Add model deployment steps here
-  only:
-    - main
-  dependencies:
-    - train 
