@@ -23,6 +23,12 @@ jobs:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
     
+    - name: Cache MNIST dataset
+      uses: actions/cache@v3
+      with:
+        path: data
+        key: mnist-dataset-v1
+    
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -33,31 +39,34 @@ jobs:
       run: |
         pytest tests/test_model.py -v
     
-    - name: Run minimal training
+    - name: Full Training
       run: |
-        # Create minimal training script for CI
-        cat > train_ci.py << EOL
+        # Create optimized training script for CPU
+        cat > train_full.py << EOL
         import torch
         from eva3_session_6_assignment_ import SimpleCNN, train_model
         
-        # Override training parameters for CI
-        torch.manual_seed(42)  # For reproducibility
-        model, history = train_model(num_epochs=1)  # Run only 1 epoch
+        # Force CPU
+        torch.set_num_threads(4)  # Optimize CPU threads
+        
+        # Run full training with CPU optimizations
+        model, history = train_model(num_epochs=20)
         EOL
         
-        # Run minimal training
-        python train_ci.py
+        # Run full training
+        python train_full.py
     
-    - name: Upload artifacts
+    - name: Upload trained models
       uses: actions/upload-artifact@v4
       with:
-        name: training-artifacts
+        name: trained-models
         path: |
           models/*.pth
           augmented_samples/
-        retention-days: 1
+        retention-days: 7
 
     - name: Training Summary
       run: |
-        echo "CI Training completed"
-        echo "Full training should be done on GPU environment"
+        echo "Full Training Completed"
+        ls -l models/
+        echo "Check artifacts for trained models"
