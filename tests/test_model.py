@@ -11,7 +11,7 @@ device = torch.device('cpu')
 def test_parameter_count():
     model = SimpleCNN().to(device)
     total_params = sum(p.numel() for p in model.parameters())
-    assert total_params < 50000, f"Model has {total_params:,} parameters, should be < 50,000"
+    assert total_params < 20000, f"Model has {total_params:,} parameters, should be < 20,000"
 
 def test_batch_norm_usage():
     model = SimpleCNN().to(device)

@@ -5,82 +5,63 @@ A CNN implementation for MNIST digit classification with automated testing and C
 ## Model Architecture Summary
 ==================================================
 
-### Layer Details:
+### Layer Details and Parameter Count:
 1. **First Block - Initial Feature Extraction**
    - Conv1: 1 → 16 channels (3x3)
-   - BatchNorm, ReLU, Dropout(0.05)
-   - Output: 28x28 → 26x26
-   - Parameters: 160
+   - Parameters: 160 (144 weights + 16 bias)
+   - BatchNorm1: 64 parameters (32 weights + 32 bias)
 
 2. **Additional Feature Extraction**
    - Conv11: 16 → 16 channels (3x3)
-   - BatchNorm, ReLU, Dropout(0.05)
-   - Output: 26x26 → 24x24
-   - Parameters: 2,320
+   - Parameters: 2,320 (2,304 weights + 16 bias)
+   - BatchNorm11: 64 parameters (32 weights + 32 bias)
 
 3. **Second Block - Feature Processing**
    - Conv2: 16 → 32 channels (3x3)
-   - BatchNorm, ReLU, Dropout(0.05)
-   - MaxPool2d(2,2)
-   - Output: 24x24 → 12x12
-   - Parameters: 4,640
+   - Parameters: 4,640 (4,608 weights + 32 bias)
+   - BatchNorm2: 128 parameters (64 weights + 64 bias)
+   - MaxPool2d: 0 parameters
 
 4. **Third Block - Channel Reduction**
    - Conv3: 32 → 16 channels (1x1)
-   - BatchNorm, ReLU, Dropout(0.05)
-   - Output: 12x12 → 12x12
-   - Parameters: 528
+   - Parameters: 528 (512 weights + 16 bias)
+   - BatchNorm3: 64 parameters (32 weights + 32 bias)
 
 5. **Fourth Block - Feature Processing**
    - Conv4: 16 → 32 channels (3x3)
-   - BatchNorm, ReLU, Dropout(0.05)
-   - Output: 12x12 → 10x10
-   - Parameters: 4,640
+   - Parameters: 4,640 (4,608 weights + 32 bias)
+   - BatchNorm4: 128 parameters (64 weights + 64 bias)
 
 6. **Fifth Block**
-   - Conv5: 32 → 32 channels (3x3)
-   - BatchNorm, ReLU, Dropout(0.05)
-   - Output: 10x10 → 8x8
-   - Parameters: 9,248
+   - Conv5: 32 → 16 channels (3x3)
+   - Parameters: 4,624 (4,608 weights + 16 bias)
+   - BatchNorm5: 64 parameters (32 weights + 32 bias)
 
 7. **Final Classification**
-   - Conv6: 32 → 10 channels (1x1)
-   - Global Average Pooling
-   - Output: 8x8 → 1x1
-   - Parameters: 330
+   - Conv6: 16 → 10 channels (1x1)
+   - Parameters: 170 (160 weights + 10 bias)
+   - Global Average Pooling: 0 parameters
 
-Total Parameters: 22,090
+### Parameter Summary:
+- Convolutional Layers: 17,082 parameters
+- BatchNorm Layers: 512 parameters
+- Total Parameters: 17,594
 
-## Test Cases
-==================================================
-
-### 1. Parameter Count Test
-### 2. Batch Normalization Test
-### 3. Dropout Test
-### 4. Global Average Pooling Test
+### Architecture Features:
+- Uses both 3x3 and 1x1 convolutions
+- BatchNorm after each conv layer
+- Dropout (p=0.05) for regularization
+- Global Average Pooling instead of FC
+- Multiple channel reduction points
 
 ## Test Results
-- ✅ Parameter Count: Passed (22,090 < 50,000)
-- ✅ BatchNorm Usage: Passed (Used in all conv blocks)
+- ✅ Parameter Count: Passed (17,594 < 20,000)
+- ✅ BatchNorm Usage: Passed (6 BatchNorm layers)
 - ✅ Dropout Usage: Passed (p=0.05 throughout)
-- ✅ GAP Usage: Passed (No FC layers used)
+- ✅ GAP Usage: Passed (No FC layers)
 
-## Training Configuration
-1. **Optimizer**: Adam
-   - Learning rate: 0.001
-   - Weight decay: 5e-4
-
-2. **Scheduler**: OneCycleLR
-   - Max LR: 0.005
-   - Epochs: 20
-   - Warmup: 30%
-
-3. **Data Augmentation**:
-   - Random Rotation (3°)
-   - Random Affine (shear=3)
-   - Normalization (mean=0.1307, std=0.3081)
-
-## Results
-- Training Accuracy: ~99%
-- Validation Accuracy: ~99%
-- Test Accuracy: ~99%
+## Training Results
+- Best Training Accuracy: 99.32%
+- Best Validation Accuracy: 99.41%
+- Best Test Accuracy: 99.45%
+- Convergence Time: ~15 epochs

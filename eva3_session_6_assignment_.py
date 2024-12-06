@@ -43,13 +43,13 @@ class SimpleCNN(nn.Module):
         self.dropout4 = nn.Dropout2d(0.05)
 
          # Fifth block - 
-        self.conv5 = nn.Conv2d(32, 32, kernel_size=3)     # 28x28 -> 26x26 (32 channels)
-        self.bn5 = nn.BatchNorm2d(32)
+        self.conv5 = nn.Conv2d(32, 16, kernel_size=3)     # 28x28 -> 26x26 (32 channels)
+        self.bn5 = nn.BatchNorm2d(16)
         self.dropout5 = nn.Dropout2d(0.05)
         
         
         # Final classification block
-        self.conv6 = nn.Conv2d(32, 10, kernel_size=1)    # 10x10 -> 10x10 (10 channels)
+        self.conv6 = nn.Conv2d(16, 10, kernel_size=1)    # 10x10 -> 10x10 (10 channels)
         self.gap = nn.AdaptiveAvgPool2d(1)               # Global Average Pooling
         self.relu = nn.ReLU()
 
@@ -101,75 +101,96 @@ def print_model_summary(model):
     print("Model Architecture Summary")
     print("="*50)
     
-    print("\nLayer Details:")
+    print("\nLayer Details and Parameter Count:")
     print("-"*50)
     total_params = 0
+    total_conv_params = 0
+    total_bn_params = 0
     
-    # Conv1 layer
+    # First Block - Initial Feature Extraction
     conv1_params = sum(p.numel() for p in model.conv1.parameters())
-    print(f"Conv1 Layer: 1 -> 16 channels, 3x3 kernel")
-    print(f"Output shape: 28x28 -> 26x26")
-    print(f"Parameters: {conv1_params:,}")
-    total_params += conv1_params
+    bn1_params = sum(p.numel() for p in model.bn1.parameters())
+    print("1. First Block - Initial Feature Extraction")
+    print(f"   - Conv1: 1 → 16 channels (3x3)")
+    print(f"   - Parameters: {conv1_params:,} ({conv1_params-16} weights + 16 bias)")
+    print(f"   - BatchNorm1: {bn1_params} parameters ({bn1_params//2} weights + {bn1_params//2} bias)")
+    total_conv_params += conv1_params
+    total_bn_params += bn1_params
     
-    # Conv2 layer
+    # Additional Feature Extraction
+    conv11_params = sum(p.numel() for p in model.conv11.parameters())
+    bn11_params = sum(p.numel() for p in model.bn11.parameters())
+    print("\n2. Additional Feature Extraction")
+    print(f"   - Conv11: 16 → 16 channels (3x3)")
+    print(f"   - Parameters: {conv11_params:,} ({conv11_params-16} weights + 16 bias)")
+    print(f"   - BatchNorm11: {bn11_params} parameters ({bn11_params//2} weights + {bn11_params//2} bias)")
+    total_conv_params += conv11_params
+    total_bn_params += bn11_params
+    
+    # Second Block - Feature Processing
     conv2_params = sum(p.numel() for p in model.conv2.parameters())
-    print(f"\nConv2 Layer: 16 -> 32 channels, 3x3 kernel")
-    print(f"Output shape: 26x26 -> 24x24")
-    print(f"Parameters: {conv2_params:,}")
-    total_params += conv2_params
+    bn2_params = sum(p.numel() for p in model.bn2.parameters())
+    print("\n3. Second Block - Feature Processing")
+    print(f"   - Conv2: 16 → 32 channels (3x3)")
+    print(f"   - Parameters: {conv2_params:,} ({conv2_params-32} weights + 32 bias)")
+    print(f"   - BatchNorm2: {bn2_params} parameters ({bn2_params//2} weights + {bn2_params//2} bias)")
+    print(f"   - MaxPool2d: 0 parameters")
+    total_conv_params += conv2_params
+    total_bn_params += bn2_params
     
-    # MaxPool layer
-    print(f"\nMaxPool Layer: 2x2, stride 2")
-    print(f"Output shape: 24x24 -> 12x12")
-    print(f"Parameters: 0")
-    
-    # Conv3 layer (1x1)
+    # Third Block - Channel Reduction
     conv3_params = sum(p.numel() for p in model.conv3.parameters())
-    print(f"\nConv3 Layer: 32 -> 16 channels, 1x1 kernel")
-    print(f"Output shape: 12x12 -> 12x12")
-    print(f"Parameters: {conv3_params:,}")
-    total_params += conv3_params
+    bn3_params = sum(p.numel() for p in model.bn3.parameters())
+    print("\n4. Third Block - Channel Reduction")
+    print(f"   - Conv3: 32 → 16 channels (1x1)")
+    print(f"   - Parameters: {conv3_params:,} ({conv3_params-16} weights + 16 bias)")
+    print(f"   - BatchNorm3: {bn3_params} parameters ({bn3_params//2} weights + {bn3_params//2} bias)")
+    total_conv_params += conv3_params
+    total_bn_params += bn3_params
     
-    # Conv4 layer
+    # Fourth Block - Feature Processing
     conv4_params = sum(p.numel() for p in model.conv4.parameters())
-    print(f"\nConv4 Layer: 16 -> 32 channels, 3x3 kernel")
-    print(f"Output shape: 12x12 -> 10x10")
-    print(f"Parameters: {conv4_params:,}")
-    total_params += conv4_params
+    bn4_params = sum(p.numel() for p in model.bn4.parameters())
+    print("\n5. Fourth Block - Feature Processing")
+    print(f"   - Conv4: 16 → 32 channels (3x3)")
+    print(f"   - Parameters: {conv4_params:,} ({conv4_params-32} weights + 32 bias)")
+    print(f"   - BatchNorm4: {bn4_params} parameters ({bn4_params//2} weights + {bn4_params//2} bias)")
+    total_conv_params += conv4_params
+    total_bn_params += bn4_params
     
-    # Conv5 layer
+    # Fifth Block
     conv5_params = sum(p.numel() for p in model.conv5.parameters())
-    print(f"\nConv5 Layer: 32 -> 32 channels, 3x3 kernel")
-    print(f"Output shape: 10x10 -> 8x8")
-    print(f"Parameters: {conv5_params:,}")
-    total_params += conv5_params
+    bn5_params = sum(p.numel() for p in model.bn5.parameters())
+    print("\n6. Fifth Block")
+    print(f"   - Conv5: 32 → 16 channels (3x3)")
+    print(f"   - Parameters: {conv5_params:,} ({conv5_params-16} weights + 16 bias)")
+    print(f"   - BatchNorm5: {bn5_params} parameters ({bn5_params//2} weights + {bn5_params//2} bias)")
+    total_conv_params += conv5_params
+    total_bn_params += bn5_params
     
-    # Conv6 layer (1x1)
+    # Final Classification
     conv6_params = sum(p.numel() for p in model.conv6.parameters())
-    print(f"\nConv6 Layer: 32 -> 10 channels, 1x1 kernel")
-    print(f"Output shape: 8x8 -> 8x8")
-    print(f"Parameters: {conv6_params:,}")
-    total_params += conv6_params
+    print("\n7. Final Classification")
+    print(f"   - Conv6: 16 → 10 channels (1x1)")
+    print(f"   - Parameters: {conv6_params:,} ({conv6_params-10} weights + 10 bias)")
+    print(f"   - Global Average Pooling: 0 parameters")
+    total_conv_params += conv6_params
     
-    # Global Average Pooling
-    print(f"\nGlobal Average Pooling Layer")
-    print(f"Output shape: 8x8 -> 1x1")
-    print(f"Parameters: 0")
+    total_params = total_conv_params + total_bn_params
     
-    # BatchNorm layers
-    bn_params = sum(p.numel() for p in model.bn1.parameters())
-    bn_params += sum(p.numel() for p in model.bn2.parameters())
-    bn_params += sum(p.numel() for p in model.bn3.parameters())
-    bn_params += sum(p.numel() for p in model.bn4.parameters())
-    bn_params += sum(p.numel() for p in model.bn5.parameters())
-    print(f"\nBatchNorm Layers")
-    print(f"Parameters: {bn_params:,}")
-    total_params += bn_params
+    print("\nParameter Summary:")
+    print(f"- Convolutional Layers: {total_conv_params:,} parameters")
+    print(f"- BatchNorm Layers: {total_bn_params:,} parameters")
+    print(f"- Total Parameters: {total_params:,}")
+    
+    print("\nArchitecture Features:")
+    print("- Uses both 3x3 and 1x1 convolutions")
+    print("- BatchNorm after each conv layer")
+    print("- Dropout (p=0.05) for regularization")
+    print("- Global Average Pooling instead of FC")
+    print("- Multiple channel reduction points")
     
     print("\n" + "="*50)
-    print(f"Total Parameters: {total_params:,}")
-    print("="*50 + "\n")
 
 def evaluate_model(model, data_loader, device='cpu'):
     model.eval()
@@ -301,9 +322,10 @@ def save_model(model, accuracy, epoch):
     torch.save(model.state_dict(), f"models/{filename}")
     return filename
 
-def train_model(num_epochs=20):
+def train_model(num_epochs=20, target_accuracy=99.5):
     print("\n" + "="*50)
     print(" Starting Training Process")
+    print(f" Target Accuracy: {target_accuracy}%")
     print("="*50)
     
     # Initialize model and print summary
@@ -375,15 +397,15 @@ def train_model(num_epochs=20):
     )
     
     # Learning rate scheduler
-    scheduler = optim.lr_scheduler.OneCycleLR(
-        optimizer,
-        max_lr=0.005,          # Reduce from 0.01 to 0.005
-        epochs=num_epochs,
-        steps_per_epoch=len(train_loader),
-        pct_start=0.3,         # Longer warmup
-        div_factor=25,         # Gentler learning rate curve
-        final_div_factor=1e4
-    )
+    # scheduler = optim.lr_scheduler.OneCycleLR(
+    #     optimizer,
+    #     max_lr=0.005,          # Reduce from 0.01 to 0.005
+    #     epochs=num_epochs,
+    #     steps_per_epoch=len(train_loader),
+    #     pct_start=0.3,         # Longer warmup
+    #     div_factor=25,         # Gentler learning rate curve
+    #     final_div_factor=1e4
+    # )
     
     # Training loop
     best_test_acc = 0
@@ -450,6 +472,12 @@ def train_model(num_epochs=20):
             best_test_acc = test_acc
             model_path = save_model(model, test_acc, epoch)
             print(f"\n💾 New best model saved! ({model_path})")
+        
+        # Early stopping if target accuracy reached
+        if val_acc >= target_accuracy:
+            print(f"\n🎯 Target accuracy {target_accuracy}% reached!")
+            print(f"Stopping training at epoch {epoch+1}")
+            break
     
     print("\n" + "="*50)
     print("🎉 Training Completed!")
@@ -459,4 +487,4 @@ def train_model(num_epochs=20):
     return model, history
 
 if __name__ == "__main__":
-    train_model(num_epochs=20) 
+    train_model(num_epochs=20, target_accuracy=99.5) 
